@@ -1,0 +1,574 @@
+DCL commands :
+
+to log into the MySQL command-line interface through cmd :
+
+mysql -u root -p
+password 
+
+Queries: 
+
+cmysql> CREATE DATABASE lab_db;
+Query OK, 1 row affected (0.03 sec)
+
+mysql> USE lab_db;
+Database changed
+mysql> CREATE TABLE employees (
+    ->     id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     first_name VARCHAR(50),
+    ->     last_name VARCHAR(50),
+    ->     department VARCHAR(50)
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> INSERT INTO employees (first_name, last_name, department)
+    -> VALUES
+    -> ('John', 'Doe', 'HR'),
+    -> ('Jane', 'Smith', 'Finance'),
+    -> ('Michael', 'Brown', 'IT'),
+    -> ('Emily', 'Davis', 'Marketing');
+Query OK, 4 rows affected (0.03 sec)
+Records: 4  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM employees;
++----+------------+-----------+------------+
+| id | first_name | last_name | department |
++----+------------+-----------+------------+
+|  1 | John       | Doe       | HR         |
+|  2 | Jane       | Smith     | Finance    |
+|  3 | Michael    | Brown     | IT         |
+|  4 | Emily      | Davis     | Marketing  |
++----+------------+-----------+------------+
+4 rows in set (0.00 sec)
+
+mysql> CREATE USER 'lab_user'@'localhost' IDENTIFIED BY 'LabPass123';
+Query OK, 0 rows affected (0.04 sec)
+
+mysql> GRANT SELECT, INSERT, UPDATE ON lab_db.employees TO 'lab_user'@'localhost';
+Query OK, 0 rows affected (0.01 sec)
+
+mysql> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.03 sec)
+
+mysql> SHOW GRANTS FOR 'lab_user'@'localhost';
++--------------------------------------------------------------------------------+
+| Grants for lab_user@localhost                                                  |
++--------------------------------------------------------------------------------+
+| GRANT USAGE ON *.* TO `lab_user`@`localhost`                                   |
+| GRANT SELECT, INSERT, UPDATE ON `lab_db`.`employees` TO `lab_user`@`localhost` |
++--------------------------------------------------------------------------------+
+2 rows in set (0.02 sec)
+
+Login as User:
+C:\Users\J.M.KAUSHALYA>mysql -u lab_user -p
+Enter password: **********
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 18
+Server version: 8.0.38 MySQL Community Server - GPL
+
+Copyright (c) 2000, 2024, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| lab_db             |
+| performance_schema |
++--------------------+
+3 rows in set (0.02 sec)
+
+mysql> use lab_db;
+Database changed
+mysql> select * from employees;
++----+------------+-----------+-------------+
+| id | first_name | last_name | department  |
++----+------------+-----------+-------------+
+|  1 | John       | Doe       | Sales       |
+|  2 | Jane       | Smith     | Finance     |
+|  3 | Michael    | Brown     | IT          |
+|  4 | Emily      | Davis     | Marketing   |
+|  5 | Alice      | Green     | Engineering |
++----+------------+-----------+-------------+
+5 rows in set (0.00 sec)
+mysql> INSERT INTO employees (first_name, last_name, department)
+    -> VALUES ('Alice', 'Green', 'Engineering');
+Query OK, 1 row affected (0.03 sec)
+mysql> UPDATE employees
+    -> SET department = 'Sales'
+    -> WHERE id = 1;
+Query OK, 0 rows affected (0.00 sec)
+Rows matched: 1  Changed: 0  Warnings: 0
+mysql> DELETE FROM employees WHERE id = 4;
+ERROR 1142 (42000): DELETE command denied to user 'lab_user'@'localhost' for table 'employees'
+
+Run the REVOKE command in the MySQL command-line interface (CLI)
+Revoke the UPDATE privilege::
+mysql>REVOKE UPDATE ON lab_db.employees FROM 'lab_user'@'localhost';
+mysql >SHOW GRANTS FOR 'lab_user'@'localhost';
+
+Again check with update permission in the lab_user login ( CMD ):
+UPDATE employees
+SET department = 'Marketing'
+WHERE id = 1;
+Expected output : 
+ERROR 1142 (42000): UPDATE command denied to user 'lab_user'@'localhost' for table 'employees'
+
+—-----------------------------------------------------------------------------------------------------------------
+
+OpenMP :
+
+packages to install :
+
+mingw32-libpthread-old -dll
+mingw32-libpthreadgc -dev
+mingw32-libpthreadgc -dll
+mingw32-libpthreadgce -dev
+mingw32-libpthreadgce -dll
+mingw32-libquadmath -dll
+
+Source code :(matmul.c)
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <omp.h>
+#define N 300
+void sequential_matrix_multiplication(int A[N][N], int B[N][N], int C[N][N]) {
+int i, j, k;
+for (i = 0; i < N; i++) {
+for (j = 0; j < N; j++) {
+C[i][j] = 0;
+}
+}
+for (i = 0; i < N; i++) {
+for (j = 0; j < N; j++) {
+for (k = 0; k < N; k++) {
+C[i][j] += A[i][k] * B[k][j];
+}
+}
+}
+}
+void parallel_matrix_multiplication(int A[N][N], int B[N][N], int C[N][N]) {
+int i, j, k;
+for (i = 0; i < N; i++) {
+for (j = 0; j < N; j++) {
+C[i][j] = 0;
+}
+}
+#pragma omp parallel for private(i, j, k) shared(A, B, C)
+for (i = 0; i < N; i++) {
+for (j = 0; j < N; j++) {
+for (k = 0; k < N; k++) {
+C[i][j] += A[i][k] * B[k][j];
+}
+}
+}
+}
+void print_matrix(int matrix[N][N]) {
+for (int i = 0; i < N; i++) {
+for (int j = 0; j < N; j++) {
+printf("%d ", matrix[i][j]);
+}
+printf("\n");
+}
+}
+int main() {
+int A[N][N], B[N][N], C_seq[N][N], C_par[N][N];
+double start_time, end_time;
+for (int i = 0; i < N; i++) {
+for (int j = 0; j < N; j++) {
+A[i][j] = rand() % 10;
+B[i][j] = rand() % 10;
+}
+}
+start_time = omp_get_wtime();
+sequential_matrix_multiplication(A, B, C_seq);
+end_time = omp_get_wtime();
+printf("Time taken for sequential matrix multiplication: %f seconds\n",
+end_time - start_time);
+start_time = omp_get_wtime();
+parallel_matrix_multiplication(A, B, C_par);
+end_time = omp_get_wtime();
+printf("Time taken for parallel matrix multiplication: %f seconds\n",
+end_time - start_time);
+printf("Element C[0][0]: %d\n", C_par[0][0]);
+printf("Element C[100][100]: %d\n", C_par[100][100]);
+printf("Element C[N-1][N-1]: %d\n", C_par[N-1][N-1]);
+return 0;
+}
+
+
+to run cmd:
+
+gcc -fopenmp -o output matmul.c
+
+output.exe
+-----------------------------------------------------------------------------------------------------------------
+
+MPI library :
+
+id = 105289
+
+to verify cmd:
+
+mpiexec
+
+Source Code : (file.py)
+
+from mpi4py import MPI
+import numpy as np
+
+INF = np.inf
+
+def floyd_warshall(local_mat, n, local_n, rank, size):
+    row_k = np.zeros(n)
+    for k in range(n):
+        root = k // local_n
+        if rank == root:
+            row_k[:] = local_mat[k % local_n, :]
+        MPI.COMM_WORLD.Bcast(row_k, root=root)
+        for i in range(local_n):
+            for j in range(n):
+                if local_mat[i, k] != INF and row_k[j] != INF:
+                    local_mat[i, j] = min(local_mat[i, j], local_mat[i, k] + row_k[j])
+
+def main():
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    if rank == 0:
+        n = int(input("Enter the number of vertices: "))
+        mat = np.zeros((n, n))
+        print(f"Enter the adjacency matrix (use {INF} for INF):")
+        for i in range(n):
+            mat[i] = list(map(float, input().split()))
+    else:
+        n = None
+        mat = None
+
+    n = comm.bcast(n, root=0)
+    local_n = n // size
+    local_mat = np.zeros((local_n, n))
+
+    comm.Scatter(mat, local_mat, root=0)
+
+    # Start timing here
+    comm.Barrier()  # Ensure all processes start timing together
+    start_time = MPI.Wtime()
+
+    # Repeat the Floyd-Warshall algorithm multiple times to get an average time
+    repetitions = 100
+    for _ in range(repetitions):
+        floyd_warshall(local_mat, n, local_n, rank, size)
+
+    # End timing here
+    comm.Barrier()  # Ensure all processes finish before stopping the timer
+    end_time = MPI.Wtime()
+    elapsed_time = (end_time - start_time) / repetitions
+
+    comm.Gather(local_mat, mat, root=0)
+
+    if rank == 0:
+        print("Shortest path matrix:")
+        for i in range(n):
+            for j in range(n):
+                if mat[i, j] == INF:
+                    print("INF", end=" ")
+                else:
+                    print(int(mat[i, j]), end=" ")
+            print()
+        print(f"Elapsed time: {elapsed_time:.8f} seconds")
+
+if __name__ == "__main__":
+    main()
+
+To RUN :
+
+pip install mpi4py
+
+mpiexec -n 4 python file.py
+
+matrix input : 
+
+0 3 inf 7
+8 0 2 inf
+5 inf 0 1
+2 inf inf 0
+
+-----------------------------------------------------------------------------------------------------------------
+
+WEKA 
+
+Knowledge Flow :
+
+ArffLoader----dataset
+
+1.ScatterPlotMatrix 
+2.ClassAssigner-----dataset 
+
+2. CrossValidationFoldMaker -------testSet trainingSet 
+   J48--------batchClassifier
+   ClassifierPerformanceEvaluator--------text
+   TextViewer
+
+Run the setup and view the result 
+
+------------------------------------------------------------------------------------------------------------------
+Wireshark: 
+
+download wireshark and Nmap
+
+to get IPV4:
+
+ipconfig
+
+open Nmap in cmd:
+
+C:\Program Files (x86)\Nmap>nping --tcp -p 80 192.168.1.36
+
+IP.addr=172.17.15.82 before stopping paste in address bar
+
+then stop the exeution and view the highlighted one (click and explore)
+
+                 ---------------------------------++++---------------------------------
+
+TSHARK : 
+
+open wireshark in cmd:
+
+tshark -D
+
+tshark -i 5 -w capture.pcap - capturing on wifi 2612 
+
+nmap :
+
+nping --tcp -p 90 192.168.1.36
+r
+wireshark : 
+
+tshark -i 5 -w capture.pcap 
+
+view the results in pcap
+------------------------------------------------------------------------------------------------------------
+
+Selenium :
+
+IDE :
+
+https://the-internet.herokuapp.com/login
+
+Code:
+
+from selenium import webdriver
+import time
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
+driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+
+test_cases = [
+    {"username": "Dinesh", "password": "SuperSecretPassword!", "expected": "failure"},
+    {"username": "Dinesh", "password": "WrongPassword", "expected": "failure"},
+    {"username": "WrongUser", "password": "SuperSecretPassword!", "expected": "failure"},
+    {"username": "Dinesh", "password": "", "expected": "failure"},
+    {"username": "tomsmith", "password": "SuperSecretPassword!", "expected": "success"},
+    {"username": "", "password": "", "expected": "failure"},
+    {"username": "Dinesh123", "password": "SuperSecretPassword!", "expected": "failure"},
+    {"username": "Dinesh", "password": "SuperSecret", "expected": "failure"},
+    {"username": "UserName", "password": "Password!", "expected": "failure"},
+    {"username": "admin", "password": "admin123", "expected": "failure"},
+]
+
+
+for i, test_case in enumerate(test_cases):
+    driver.get("https://the-internet.herokuapp.com/login")
+    
+    username = driver.find_element(By.ID, "username")
+    password = driver.find_element(By.ID, "password")
+    button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+    
+    username.send_keys(test_case["username"])
+    password.send_keys(test_case["password"])
+    button.click()
+    
+    time.sleep(3)  # Wait for page to load (you can adjust or remove this)
+    
+    try:
+        success_message = driver.find_element(By.CSS_SELECTOR, ".flash.success")
+        result = "success"
+    except:
+        result = "failure"
+    
+    # Output the test result
+    print(f"Test case {i + 1}: Username: {test_case['username']} | Password: {test_case['password']} | Expected: {test_case['expected']} | Result: {result}")
+    
+    time.sleep(4)  # Add delay between tests
+
+# Close the browser
+driver.quit()
+
+
+To RUN :
+
+pip install selenium 
+
+pip install webdriver-manager
+
+-----------------------------------------------------------------------------------------------------------------
+
+R : 
+
+1. https://cran.r-project.org/bin/windows/base/ download for windows
+2. windows-> Rgui
+3. Mean: 
+> data <- c(1,2,3,4,5) 
+> mean_value <- mean(data) 
+>print(mean_value)
+4. Pearson correlation: 
+> x <- c(1,2,3,4,5) 
+> y <- c(2,4,6,8,10) 
+> pearson_corr <- cor(x,y, method = “pearson”) 
+> print(pearson_corr)
+5. Spearman: 
+> x <- c(1,2,3,4,5) 
+> y <- c(5,6,7,8,7) 
+> spearman_corr <- cor(x, y, method = “spearman”)
+> print(spearman_corr)
+6. Paired t test: 
+> paired_t_test <- t.test(before, after, paired = TRUE) 
+> print(paired_t_test)
+7. One sample: 
+> data <- c(1.1, 2.2, 3.3, 2.9, 4.0) 
+> one_sample_t_test <- t.test(data, mu = 3) 
+> print(one_sample_t_test)
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+NS3:
+
+terminal sudo su 
+mkdir -p /home/mano/ns-allinone1
+cd /home/mano/ns-allinone1
+wget https://www.nsnam.org/releases/ns-allinone-3.35.tar.bz2
+tar -xvjf ns-allinone-3.35.tar.bz2
+if any duplicate for deletion:
+    sudo rm -rf /home/mano/ns-allinone/ns-allinone-3.35
+cd ns-allinone-3.35/ns-3.35
+./waf clean
+./waf configure
+./waf build
+
+error occurs:
+cd src/network/utils
+nano bit-serializer.h
+       #include <cstdint>
+nano bit-deserializer.h
+       #include <cstdint>
+       
+cd /home/mano/ns-allinone1/ns-allinone-3.35/ns-3.35
+./waf clean
+./waf configure
+./waf build
+
+error occurs:
+cd src/wifi/model
+nano block-ack-type.h
+        #include <cstdint>
+nano block-ack-type.cc
+        #include <cstdint> 
+        
+cd /home/mano/ns-allinone1/ns-allinone-3.35/ns-3.35
+./waf clean
+./waf configure
+./waf build
+
+error occurs:
+sudo apt update
+sudo apt install python3-venv
+python3 -m venv myenv
+source myenv/bin/activate
+pip install --upgrade pybindgen
+./waf clean
+./waf configure
+./waf build
+
+cd scratch
+nano tcp-example.cc
+
+
+#include "ns3/core-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/point-to-point-module.h"
+
+using namespace ns3;
+
+int main (int argc, char *argv[])
+{
+  // Create nodes
+  NodeContainer nodes;
+  nodes.Create (2);
+
+  // Install internet stack on nodes
+  InternetStackHelper stack;
+  stack.Install (nodes);
+
+  // Set up the network topology
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  NetDeviceContainer devices = pointToPoint.Install (nodes);
+
+  // Assign IP addresses
+  Ipv4AddressHelper address;
+  address.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer interfaces = address.Assign (devices);
+
+  // Create and install TCP server application on node 1
+  uint16_t port = 9;
+  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), port));
+  ApplicationContainer serverApps = sinkHelper.Install (nodes.Get (1));
+  serverApps.Start (Seconds (1.0));
+  serverApps.Stop (Seconds (10.0));
+
+  // Create and install TCP client application on node 0
+  BulkSendHelper clientHelper ("ns3::TcpSocketFactory", InetSocketAddress (interfaces.GetAddress (1), port));
+  clientHelper.SetAttribute ("MaxBytes", UintegerValue (0));
+  clientHelper.SetAttribute ("SendSize", UintegerValue (1024));
+  ApplicationContainer clientApps = clientHelper.Install (nodes.Get (0));
+  clientApps.Start (Seconds (2.0));
+  clientApps.Stop (Seconds (10.0));
+
+  // Output IP addresses
+  std::cout << "Client IP Address: " << interfaces.GetAddress (0) << std::endl;
+  std::cout << "Server IP Address: " << interfaces.GetAddress (1) << std::endl;
+
+  // Run the simulation
+  Simulator::Run ();
+
+  // Output simulation completion
+  std::cout << "Simulation completed." << std::endl;
+
+  Simulator::Destroy ();
+
+  return 0;
+}
+
+
+
+cd /home/mano/ns-allinone1/ns-allinone-3.35/ns-3.35
+./waf clean
+./waf configure
+./waf build
+
+./waf --run tcp-example
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
