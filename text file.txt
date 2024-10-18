@@ -307,17 +307,16 @@ WEKA
 
 Knowledge Flow :
 
-ArffLoader----dataset
+arffloader
+scatterplotmatrix ds
+classassigner ds
+crossvalidationfoldmaker ds
+j48 test train
+classifierperformanceevaluator batchclassifier
+textviewer text
 
-1.ScatterPlotMatrix 
-2.ClassAssigner-----dataset 
-
-2. CrossValidationFoldMaker -------testSet trainingSet 
-   J48--------batchClassifier
-   ClassifierPerformanceEvaluator--------text
-   TextViewer
-
-Run the setup and view the result 
+ArffLoader configure ds iris vote run
+textviewer show result
 
 ------------------------------------------------------------------------------------------------------------------
 Wireshark: 
