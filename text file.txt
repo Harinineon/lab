@@ -450,6 +450,25 @@ R :
 > print(one_sample_t_test)
 
 --------------------------------------------------------------------------------------------------------------------------------------------
+3D
+Download
+Cube will be there
+S on x axis big rectangle
+Add>mesh>plane
+S on plane
+G Y grab on y axis
+G Z grab on z axis
+Add>mesh>cube
+S G
+Select cube physics>rigid body>20kg>shape>mesh>friction>1>damping>0.3>rotation>0.6
+Select plane physic>rigid body>type>passive>shape>mesh>friction>1
+Select cuboid physics>rigid body>type>passive>shape>mesh>animated click>friction>0.5
+Play
+At 120>click cuboid>click N to see location>click I to keyframe>go to 130 time>G Y bring cuboid to front>left click to confirm
+File>save as
+Click cube>material (right side)>surface>diffuse>shift D to duplicate
+Click scene(right side) >rigid body world>cache>bake
+------------------------------------------------------------------------------------------------------------------------------------------------
 
 NS3:
 
